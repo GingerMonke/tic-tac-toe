@@ -1,7 +1,4 @@
-import TicTacToeEngine
 import pygame as p
-
-
 
 p.font.init()
 width = height = 600
@@ -13,6 +10,17 @@ WINNER_FONT = p.font.SysFont('comicsans', 100)
 WHITE = (255, 255, 255)
 screen = p.display.set_mode((width, height))
 
+class GameState():
+    def __init__(self):
+        self.board = [
+            ["--", "--", "--"],
+            ["--", "--", "--"],
+            ["--", "--", "--"]
+        ]
+
+        self.whiteToMove = True
+        self.moveLog = []
+
 def loadImages():
     pieces = ["cross", "circle"]
     for piece in pieces:
@@ -23,7 +31,7 @@ def main():
     p.init()
     clock = p.time.Clock()
     screen.fill(WHITE)
-    gs = TicTacToeEngine.GameState()
+    gs = GameState()
     loadImages()
     running = True
     current_piece = "circle"
