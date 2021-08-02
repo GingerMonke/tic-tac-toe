@@ -1,5 +1,5 @@
 import pygame as p
-
+import Engine
 p.font.init()
 width = height = 600
 dim = 3
@@ -11,16 +11,7 @@ WHITE = (255, 255, 255)
 screen = p.display.set_mode((width, height))
 
 
-class GameState:
-    def __init__(self):
-        self.board = [
-            ["--", "--", "--"],
-            ["--", "--", "--"],
-            ["--", "--", "--"]
-        ]
-
-
-def loadImages():
+def load_images():
     pieces = ["cross", "circle"]
     for piece in pieces:
         images[piece] = p.transform.scale(p.image.load("image/" + piece + ".png"), (sqsize - 10, sqsize - 10))
@@ -30,12 +21,11 @@ def main():
     p.init()
     clock = p.time.Clock()
     screen.fill(WHITE)
-    loadImages()
-    gs = GameState()
+    load_images()
+    board = Engine.Board()
+    opp = Engine.Opponent()
+    global running
     running = True
-    current_piece = "circle"
-    drawGameState(screen, gs)
-    move_count = 0
     while running:
         for e in p.event.get():
             if e.type == p.QUIT:
@@ -44,34 +34,33 @@ def main():
                 location = p.mouse.get_pos()
                 col = location[0] // sqsize
                 row = location[1] // sqsize
-                sqselected = (row, col)
-                if gs.board[row][col] == "--":
-                    gs.board[row][col] = current_piece
-                    if current_piece == "circle":
-                        current_piece = "cross"
-                    else:
-                        current_piece = "circle"
-                    drawGameState(screen, gs)
-                    move_count += 1
-                    if move_count > 4:
-                        if containTriple(gs.board):
-                            if current_piece == "circle":
-                                result("Cross Wins!")
-                            else:
-                                result("Circle Wins!")
-                        elif move_count == 9:
-                            result("It's a tie!")
+                selected_sq = (row, col)
+                if board.is_circle_move():
+                    if board.cells[row][col] == "--":
+                        board = board.make_move(selected_sq)
 
+        if board.has_triple():
+            if not board.is_circle_move():
+                result("Circle Wins!")
+            else:
+                result("Cross Wins!")
+        if board.is_draw():
+            result("It's a tie!")
+        elif not board.is_circle_move():
+            move = opp.get_best_move(board, 5)
+            board = board.make_move(move)
+
+        draw_game_state(screen, board)
         clock.tick(maxfps)
         p.display.update()
 
 
-def drawGameState(screen, gs):
-    drawBoard(screen)
-    drawPieces(screen, gs.board)
+def draw_game_state(screen, board):
+    draw_board(screen)
+    draw_pieces(screen, board.cells)
 
 
-def drawBoard(screen):
+def draw_board(screen):
     colour = (0, 0, 0)
     for r in range(dim + 1):
         p.draw.rect(screen, colour, p.Rect(width * r//3 - 5, 0, 10, height))
@@ -79,7 +68,7 @@ def drawBoard(screen):
         p.draw.rect(screen, colour, p.Rect(0, height * c//3 - 5, width, 10))
 
 
-def drawPieces(screen, board):
+def draw_pieces(screen, board):
     for r in range(dim):
         for c in range(dim):
             piece = board[r][c]
@@ -87,21 +76,10 @@ def drawPieces(screen, board):
                 screen.blit(images[piece], p.Rect(c * sqsize + 5, r * sqsize + 5, sqsize, sqsize))
 
 
-def containTriple(board):
-    if board[2][2] != "--" and (board[0][0] == board[1][1] == board[2][2] or board[2][0] == board[1][1] == board[0][2]):
-        return True
-    for i in range(dim):
-        if "--" != board[i][0] == board[i][1] == board[i][2] or "--" != board[2][i] == board[1][i] == board[0][i]:
-            return True
-
-
 def result(text):
-    draw_text = WINNER_FONT.render(text, False, (125, 125, 125))
-    screen.blit(draw_text, (width/2 - draw_text.get_width() /
-                         2, height/2 - draw_text.get_height()/2))
-    p.display.update()
-    p.time.delay(5000)
-    main()
+    print(text)
+    global running
+    running = False
 
 
 main()
